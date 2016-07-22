@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Predicting activity quality from monitors"
 author: "Pedro Jesus"
 date: "July 22, 2016"
 output: html_document
@@ -9,22 +9,104 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+#Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+In this project we have data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants performing a specific exercise. They were asked to perform barbell lifts correctly and incorrectly in 4 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The goal of this project is to predict examples on the testing set given the examples on the training set, where we know how the barbell lift was performed.
+ 
+#Problem Description
 
-```{r cars}
-summary(cars)
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate.
+
+For feature extractio,n features on the Euler angles (roll, pitch and yaw) were calculated, as well as the raw accelerometer, gyroscope and magnetometer readings. For the Euler angles of each of the four sensors, eight features were calculated: mean, variance, standard deviation, max, min, amplitude, kurtosis and skewness.
+
+##Goal
+
+The goal of the project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+#Obtaining data
+
+First thing is to download the data.
+
+```{r, message = FALSE, warning=FALSE}
+library(dplyr)
+library(caret)
+library(randomForest)
+if (!file.exists("data")){
+    dir.create("data")
+    # Download data
+    download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv', './data/pml-training.csv')
+    download.file('http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv', './data/pml-testing.csv')    
+}
+
 ```
 
-## Including Plots
+Then to read the data.
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r cache = TRUE}
+training <- read.csv('./data/pml-training.csv', na.strings=c("NA", ""))
+trainingDF <- tbl_df(training)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#Feature removal 
+
+First of all compute number of NA in each column.
+```{r cache = TRUE}
+num <- apply(training, 2, function(x) {sum(is.na(x))})
+sum(num < 0.9*dim(training))
+sum(num == 0)
+```
+
+It can be seen that either a variable has 0 NA or more than 90% of examples have NA. So those variables are simply removed from the data.
+
+```{r cache = TRUE}
+trainingDF <- trainingDF %>% select(which(num == 0))
+```
+
+Another set that is removed are the first seven columns, because they are details not related with the exercise, like example ID or time measures were taken.
+
+```{r cache = TRUE}
+trainingDF <- trainingDF[,-(1:7)]
+```
+
+#Cross-validation
+
+In order to perform cross-validation, the training data is split into training (75%) and testing (25%), which is the method of random subsampling, using the function *createDataPartition*. This way it is possible to check the performance of the model on a data set other than the set it was trained on, obtaining an out-of-sample error.
+
+```{r cache = TRUE}
+library(caret)
+set.seed(7777)
+inTrain = createDataPartition(trainingDF$classe, p = 3/4)[[1]]
+train = trainingDF[inTrain,]
+cv <- trainingDF[-inTrain,]
+```
+
+#Model
+
+The model used for prediction is a simple random forest method with all the default parameters. Random forests is one of the most widely used methods for predictions, making it the first choice for this project. Which we will see that has very good results and therefore is no need to fit other models.
+
+```{r cache = TRUE, warning}
+fit <- train(classe ~ ., method = "rf", data = train)
+predict <- predict(fit, cv)
+cvpred <- confusionMatrix(predict, reference = cv$classe)
+cvpred
+```
+
+Seeing the confusion matrix result, accuracy in the cross-validation set is really high (99.4%).
+
+##Out-of-sample error
+
+This is the error rate obtained on new data, which will be computed on the cross-validation set. The expected value for this is 1 - accuracy. So taking into consideration cross-validation's prediction accuracy, the expected out of sample error is 0.4%.
+
+#Prediction
+
+Finally we take the testing set and predict its "classe" values using the previously fit random forest.
+
+```{r}
+testing <- read.csv('./data/pml-testing.csv', na.strings=c("NA", ""))
+submission <- predict(fit, testing)
+submission
+```
+
+Which correctly predicted all 20 cases.
