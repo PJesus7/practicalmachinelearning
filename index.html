@@ -131,7 +131,7 @@ $(document).ready(function () {
 <div id="problem-description" class="section level1">
 <h1>Problem Description</h1>
 <p>Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate.</p>
-<p>For feature extractio,n features on the Euler angles (roll, pitch and yaw) were calculated, as well as the raw accelerometer, gyroscope and magnetometer readings. For the Euler angles of each of the four sensors, eight features were calculated: mean, variance, standard deviation, max, min, amplitude, kurtosis and skewness.</p>
+<p>For feature extraction, features on the Euler angles (roll, pitch and yaw) were calculated, as well as the raw accelerometer, gyroscope and magnetometer readings. For the Euler angles of each of the four sensors, eight features were calculated: mean, variance, standard deviation, max, min, amplitude, kurtosis and skewness.</p>
 <div id="goal" class="section level2">
 <h2>Goal</h2>
 <p>The goal of the project is to predict the manner in which they did the exercise. This is the “classe” variable in the training set. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.</p>
@@ -161,14 +161,29 @@ sum(num &lt; 0.9*dim(training))</code></pre>
 <pre><code>## [1] 60</code></pre>
 <pre class="r"><code>sum(num == 0)</code></pre>
 <pre><code>## [1] 60</code></pre>
-<p>It can be seen that either a variable has 0 NA or more than 90% of examples have NA. So those variables are simply removed from the data.</p>
+<p>It can be seen that either a variable has 0 NA or more than 90% of examples have NA. So variables with NAs are simply removed from the data.</p>
 <pre class="r"><code>trainingDF &lt;- trainingDF %&gt;% select(which(num == 0))</code></pre>
 <p>Another set that is removed are the first seven columns, because they are details not related with the exercise, like example ID or time measures were taken.</p>
+<pre class="r"><code>head(training[,(1:7)])</code></pre>
+<pre><code>##   X user_name raw_timestamp_part_1 raw_timestamp_part_2   cvtd_timestamp
+## 1 1  carlitos           1323084231               788290 05/12/2011 11:23
+## 2 2  carlitos           1323084231               808298 05/12/2011 11:23
+## 3 3  carlitos           1323084231               820366 05/12/2011 11:23
+## 4 4  carlitos           1323084232               120339 05/12/2011 11:23
+## 5 5  carlitos           1323084232               196328 05/12/2011 11:23
+## 6 6  carlitos           1323084232               304277 05/12/2011 11:23
+##   new_window num_window
+## 1         no         11
+## 2         no         11
+## 3         no         11
+## 4         no         12
+## 5         no         12
+## 6         no         12</code></pre>
 <pre class="r"><code>trainingDF &lt;- trainingDF[,-(1:7)]</code></pre>
 </div>
 <div id="cross-validation" class="section level1">
 <h1>Cross-validation</h1>
-<p>In order to perform cross-validation, the training data is split into training (75%) and testing (25%), which is the method of random subsampling, using the function <em>createDataPartition</em>. This way it is possible to check the performance of the model on a data set other than the set it was trained on, obtaining an out-of-sample error.</p>
+<p>In order to perform cross-validation, the training data is split into training (75%) and testing (25%). This method is called <em>random subsampling</em>, performed using the function <em>createDataPartition</em>. This way it is possible to check the performance of the model on a data set other than the set it was trained on, obtaining an out-of-sample error.</p>
 <pre class="r"><code>library(caret)
 set.seed(7777)
 inTrain = createDataPartition(trainingDF$classe, p = 3/4)[[1]]
@@ -177,7 +192,7 @@ cv &lt;- trainingDF[-inTrain,]</code></pre>
 </div>
 <div id="model" class="section level1">
 <h1>Model</h1>
-<p>The model used for prediction is a simple random forest method with all the default parameters. Random forests is one of the most widely used methods for predictions, making it the first choice for this project. Which we will see that has very good results and therefore is no need to fit other models.</p>
+<p>The model used for prediction is a random forest with all the default parameters. Random forests are one of the most widely used methods for predictions, making it the first choice for this project. Which we will see has very good results and therefore there will be no need to fit other models.</p>
 <pre class="r"><code>fit &lt;- train(classe ~ ., method = &quot;rf&quot;, data = train)
 predict &lt;- predict(fit, cv)
 cvpred &lt;- confusionMatrix(predict, reference = cv$classe)
@@ -227,7 +242,7 @@ submission &lt;- predict(fit, testing)
 submission</code></pre>
 <pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
-<p>Which correctly predicted all 20 cases.</p>
+<p>Which correctly predicted all 20 cases, supporting the case of the model having very high accuracy.</p>
 </div>
 
 
