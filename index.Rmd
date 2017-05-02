@@ -9,23 +9,23 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Introduction
+# Introduction
 
 In this project we have data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants performing a specific exercise. They were asked to perform barbell lifts correctly and incorrectly in 4 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har 
 
 The goal of this project is to predict examples on the testing set given the examples on the training set, where we know how the barbell lift was performed.
  
-#Problem Description
+# Problem Description
 
 Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate.
 
 For feature extraction, features on the Euler angles (roll, pitch and yaw) were calculated, as well as the raw accelerometer, gyroscope and magnetometer readings. For the Euler angles of each of the four sensors, eight features were calculated: mean, variance, standard deviation, max, min, amplitude, kurtosis and skewness.
 
-##Goal
+## Goal
 
 The goal of the project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
 
-#Obtaining data
+# Obtaining data
 
 First thing is to download the data.
 
@@ -49,7 +49,7 @@ training <- read.csv('./data/pml-training.csv', na.strings=c("NA", ""))
 trainingDF <- tbl_df(training)
 ```
 
-#Feature removal 
+# Feature removal 
 
 First of all compute number of NA in each column.
 ```{r cache = TRUE}
@@ -71,7 +71,7 @@ head(training[,(1:7)])
 trainingDF <- trainingDF[,-(1:7)]
 ```
 
-#Cross-validation
+# Cross-validation
 
 In order to perform cross-validation, the training data is split into training (75%) and testing (25%). This method is called *random subsampling*, performed using the function *createDataPartition*. This way it is possible to check the performance of the model on a data set other than the set it was trained on, obtaining an out-of-sample error.
 
@@ -83,7 +83,7 @@ train = trainingDF[inTrain,]
 cv <- trainingDF[-inTrain,]
 ```
 
-#Model
+# Model
 
 The model used for prediction is a random forest with all the default parameters. Random forests are one of the most widely used methods for predictions, making it the first choice for this project. Which we will see has very good results and therefore there will be no need to fit other models.
 
@@ -96,11 +96,11 @@ cvpred
 
 Seeing the confusion matrix result, accuracy in the cross-validation set is really high (99.4%).
 
-##Out-of-sample error
+## Out-of-sample error
 
 This is the error rate obtained on new data, which will be computed on the cross-validation set. The expected value for this is 1 - accuracy. So taking into consideration cross-validation's prediction accuracy, the expected out of sample error is 0.4%.
 
-#Prediction
+# Prediction
 
 Finally we take the testing set and predict its "classe" values using the previously fit random forest.
 
